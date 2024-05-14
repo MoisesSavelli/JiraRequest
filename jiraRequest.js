@@ -1,4 +1,5 @@
 const axios = require('axios');
+const fs = require('fs');
 require('dotenv').config();
 
 const apiEndpoint = '/rest/api/3/search';
@@ -12,21 +13,28 @@ const auth = Buffer.from(`${username}:${apiToken}`).toString('base64');
 const jql = `project=${projectKey}`;
 
 const config = {
-    method: 'get',
-    url: `${jiraBaseUrl}${apiEndpoint}`,
-    headers: {
-      'Authorization': `Basic ${auth}`,
-      'Accept': 'application/json'
-    },
-    params: {
-      jql: jql,
-      maxResults: 100
-    }
-  };
+  method: 'get',
+  url: `${jiraBaseUrl}${apiEndpoint}`,
+  headers: {
+    'Authorization': `Basic ${auth}`,
+    'Accept': 'application/json'
+  },
+  params: {
+    jql: jql,
+    maxResults: 100
+  }
+};
 
 axios(config)
   .then(response => {
-    console.log(JSON.stringify(response.data, null, 2));
+    const data = JSON.stringify(response.data, null, 2);
+    fs.writeFileSync('jiraIssues.json', data, (err) => {
+      if (err) {
+        console.error('Error writing to file', err);
+      } else {
+        console.log('File successfully written');
+      }
+    });
   })
   .catch(error => {
     console.error(error);
