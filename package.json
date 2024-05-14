@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "axios": "^1.6.8",
+    "csv-write-stream": "^2.0.0",
     "dotenv": "^16.4.5"
   }
 }

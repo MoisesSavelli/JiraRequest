@@ -12,22 +12,40 @@ const auth = Buffer.from(`${username}:${apiToken}`).toString('base64');
 
 const jql = `project=${projectKey}`;
 
-const config = {
-  method: 'get',
-  url: `${jiraBaseUrl}${apiEndpoint}`,
-  headers: {
-    'Authorization': `Basic ${auth}`,
-    'Accept': 'application/json'
-  },
-  params: {
-    jql: jql,
-    maxResults: 100
+const fetchIssues = async (startAt = 0, allIssues = []) => {
+  const config = {
+    method: 'get',
+    url: `${jiraBaseUrl}${apiEndpoint}`,
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Accept': 'application/json'
+    },
+    params: {
+      jql: jql,
+      maxResults: 100,
+      startAt: startAt
+    }
+  };
+
+  try {
+    const response = await axios(config);
+    const issues = response.data.issues;
+    allIssues = allIssues.concat(issues);
+
+    if (response.data.total > allIssues.length) {
+      return fetchIssues(startAt + 100, allIssues);
+    } else {
+      return allIssues;
+    }
+  } catch (error) {
+    console.error(error.toJSON());
+    throw error;
   }
 };
 
-axios(config)
-  .then(response => {
-    const data = JSON.stringify(response.data, null, 2);
+fetchIssues()
+  .then(issues => {
+    const data = JSON.stringify(issues, null, 2);
     fs.writeFileSync('jiraIssues.json', data, (err) => {
       if (err) {
         console.error('Error writing to file', err);
@@ -37,5 +55,5 @@ axios(config)
     });
   })
   .catch(error => {
-    console.error(error);
+    console.error('Failed to fetch issues:', error);
   });
