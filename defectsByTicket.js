@@ -33,7 +33,7 @@ fs.readFile(filePath, 'utf8', (err, data) => {
     const findIssueByKey = (key) => jiraIssues.find(issue => issue.key === key);
 
     for (let issue of jiraIssues) {
-      if (issue.fields.issuetype.name === 'Bug') {
+      if (issue.fields.issuetype.name === 'Bug' && (issue.fields.status.name !== 'New' && issue.fields.status.name !== 'Canceled')) {
         let bugTicket = issue;
         let linkedIssues = issue.fields.issuelinks || [];
         // console.log(`Bug Ticket: ${bugTicket.key} has ${linkedIssues.length} linked issues`);
@@ -41,6 +41,8 @@ fs.readFile(filePath, 'utf8', (err, data) => {
         linkedIssues.forEach(linkedIssue => {
           const xrayTestKey = linkedIssue.inwardIssue ? linkedIssue.inwardIssue.key : (linkedIssue.outwardIssue ? linkedIssue.outwardIssue.key : null);
           const xrayTest = findIssueByKey(xrayTestKey);
+
+          // console.log(issue.fields.assignee)
 
           if (xrayTest && xrayTest.fields.issuetype.name === 'Xray Test') {
             // console.log(`Xray Test Found: ${xrayTest.key}`);
