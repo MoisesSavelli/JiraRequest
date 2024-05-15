@@ -71,9 +71,6 @@ This will generate a tickets.csv file in the project directory with the followin
 ## Contributing
 If you would like to contribute to this project, please create a pull request. We welcome all contributions!
 
-## License
-This project is licensed under the MIT License. See the LICENSE file for details.
-
 ## Contact
 For any questions or suggestions, feel free to open an issue or contact us.
 
