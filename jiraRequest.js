@@ -1,5 +1,6 @@
 const axios = require('axios');
 const fs = require('fs');
+const { format } = require('date-fns');
 require('dotenv').config();
 
 const apiEndpoint = '/rest/api/3/search';
@@ -10,7 +11,15 @@ const apiToken = process.env.JIRA_API_TOKEN;
 
 const auth = Buffer.from(`${username}:${apiToken}`).toString('base64');
 
-const jql = `project=${projectKey}`;
+// Dates for Jira Query
+const startDate = '2024/01/01';
+const endDate = format(new Date(), 'yyyy/MM/dd'); // Current Date
+
+// Bring all information - uncomment this and comment the next line to have all information
+// const jql = `project=${projectKey}`; 
+
+// Bring information by period
+const jql = `project=${projectKey} AND created >= "${startDate}" AND created <= "${endDate}"`;
 
 const fetchIssues = async (startAt = 0, allIssues = []) => {
   const config = {
