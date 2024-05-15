@@ -63,10 +63,10 @@ This will generate a tickets.csv file in the project directory with the followin
 ## Filtering Logic
 
 ### The filtering process follows these steps:
-Find a bug.
-Find the test execution related to the bug.
-Find the QA ticket related to the test execution.
-Find the user story related to the QA ticket.
+* Find a bug.
+* Find the test execution related to the bug.
+* Find the QA ticket related to the test execution.
+* Find the user story related to the QA ticket.
 
 ## Contributing
 If you would like to contribute to this project, please create a pull request. We welcome all contributions!
