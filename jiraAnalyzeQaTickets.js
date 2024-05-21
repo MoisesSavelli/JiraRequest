@@ -1,20 +1,20 @@
 const fs = require('fs');
 
-// Leer los datos de Jira desde el archivo JSON
+// Read Jira data from JSON file
 const rawData = fs.readFileSync('jiraIssues.json');
 const jiraIssues = JSON.parse(rawData);
 
-// Función para encontrar un ticket por su clave
+// Function to find a ticket by its key
 function findTicketByKey(key) {
     return jiraIssues.find(issue => issue.key === key);
 }
 
-// Función para obtener los sub-tasks relacionados a un ticket
+// Function to obtain the sub-tasks related to a ticket
 function getSubTasks(ticket) {
     return ticket.fields.subtasks || [];
 }
 
-// Función para obtener los tickets de desarrollo relacionados en "duplicates" y sub-tasks
+// Function to get related development tickets in "duplicates" and sub-tasks
 function analyzeTicket(ticketKey) {
     const ticket = findTicketByKey(ticketKey);
 
@@ -24,14 +24,13 @@ function analyzeTicket(ticketKey) {
     }
 
     console.log(`Analyzing QA Ticket: ${ticketKey}`);
-    console.log(ticket);  // Agregar esta línea para revisar la estructura del ticket
-
-    // Buscar en el campo "duplicates"
+    console.log(ticket);  // Add this line to review the ticket structure
+    // Search in the "duplicates" field
     const duplicates = ticket.fields.issuelinks.filter(link => 
         link.type.name === 'Duplicate' && link.outwardIssue
     ).map(link => link.outwardIssue);
 
-    console.log('Duplicates links:', ticket.fields.issuelinks); // Depuración adicional
+    console.log('Duplicates links:', ticket.fields.issuelinks); // Additional debugging
 
     if (duplicates.length > 0) {
         console.log(`Found ${duplicates.length} related development ticket(s) in "duplicates":`);
@@ -46,10 +45,10 @@ function analyzeTicket(ticketKey) {
         console.log(`No related development tickets found in "duplicates".`);
     }
 
-    // Buscar en los sub-tasks
+    // Search in sub-tasks
     const subTasks = getSubTasks(ticket);
 
-    console.log('Sub-tasks:', subTasks); // Depuración adicional
+    console.log('Sub-tasks:', subTasks); // Additional debugging
 
     if (subTasks.length > 0) {
         console.log(`Found ${subTasks.length} related development ticket(s) in sub-tasks:`);
@@ -67,5 +66,5 @@ function analyzeTicket(ticketKey) {
     console.log('Analysis complete.');
 }
 
-// Ejecutar el análisis para los dos casos mencionados
+// Run the analysis for the intended cases
 analyzeTicket('PAELS-4509');
