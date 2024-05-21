@@ -3,6 +3,9 @@
     "axios": "^1.6.8",
     "csv-write-stream": "^2.0.0",
     "date-fns": "^3.6.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "fs": "^0.0.1-security",
+    "mssql": "^10.0.2",
+    "xlsx": "^0.18.5"
   }
 }

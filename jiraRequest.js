@@ -12,14 +12,14 @@ const apiToken = process.env.JIRA_API_TOKEN;
 const auth = Buffer.from(`${username}:${apiToken}`).toString('base64');
 
 // Dates for Jira Query
-const startDate = '2024/01/01';
-const endDate = format(new Date(), 'yyyy/MM/dd'); // Current Date
+//const startDate = '2024/01/01';
+//const endDate = format(new Date(), 'yyyy/MM/dd'); // Current Date
 
 // Bring all information - uncomment this and comment the next line to have all information
-// const jql = `project=${projectKey}`; 
+const jql = `project=${projectKey}`; 
 
 // Bring information by period
-const jql = `project=${projectKey} AND created >= "${startDate}" AND created <= "${endDate}"`;
+//const jql = `project=${projectKey} AND created >= "${startDate}" AND created <= "${endDate}"`;
 
 const fetchIssues = async (startAt = 0, allIssues = []) => {
   const config = {
@@ -52,6 +52,7 @@ const fetchIssues = async (startAt = 0, allIssues = []) => {
   }
 };
 
+console.time('fetchIssues');
 fetchIssues()
   .then(issues => {
     const data = JSON.stringify(issues, null, 2);
@@ -62,7 +63,9 @@ fetchIssues()
         console.log('File successfully written');
       }
     });
+    console.timeEnd('fetchIssues');
   })
   .catch(error => {
     console.error('Failed to fetch issues:', error);
+    console.timeEnd('fetchIssues');
   });

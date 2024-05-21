@@ -11,6 +11,8 @@
 # Testing
 jiraIssues.json
 tickets.csv
+*.xlsx
+*.xls
 
 # Debugging files
 npm-debug.log*
