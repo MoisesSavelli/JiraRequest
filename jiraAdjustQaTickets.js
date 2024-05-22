@@ -1,39 +1,92 @@
 const fs = require('fs');
 const xlsx = require('xlsx');
+const axios = require('axios');
+const { exec } = require('child_process');
+require('dotenv').config();
 
-// Read Jira data from a JSON file
+// Read Jira data from JSON file
 const rawData = fs.readFileSync('jiraIssues.json');
 const jiraIssues = JSON.parse(rawData);
 
 // Function to get all QA tickets
-function getQaTickets(issues) {
-    return issues.filter(issue => issue.fields.issuetype.name === 'QA Ticket');
+function getQaTickets(issues, maxProcess) {
+    const qaTickets = issues.filter(issue => issue.fields.issuetype.name === 'QA Ticket' && issue.key === 'PAELS-8317');
+    return maxProcess > 0 ? qaTickets.slice(0, maxProcess) : qaTickets;
 }
 
 // Function to get related development tickets of type 'Story'
 function getRelatedDevTicket(qaTicket) {
     return qaTicket.fields.issuelinks.filter(link => 
-        // link.type.name === 'Duplicate' && link.outwardIssue?.fields.issuetype.name === 'Story'
         link.outwardIssue?.fields.issuetype.name === 'Story'
     ).map(link => link.outwardIssue);
 }
 
-// Function to obtain the test cases related to the QA ticket
+// Function to get test cases related to the QA ticket
 function getTestCases(qaTicket) {
     return qaTicket.fields.issuelinks.filter(link => link.type.name === 'Test' && link.inwardIssue)
         .map(link => link.inwardIssue);
 }
 
+// Function to check if a link already exists between a test case and a development ticket
+function isLinkAlreadyExists(testCaseKey, devTicketKey, jiraIssues) {
+    const testCase = jiraIssues.find(issue => issue.key === testCaseKey);
+    if (!testCase || !testCase.fields || !testCase.fields.issuelinks) {
+        console.log(`Test case ${testCaseKey} does not have issue links or fields.`);
+        return false;
+    }
+    return testCase.fields.issuelinks.some(link => 
+        (link.outwardIssue && link.outwardIssue.key === devTicketKey) ||
+        (link.inwardIssue && link.inwardIssue.key === devTicketKey)
+    );
+}
+
+// Function to link a test case to a development ticket
+async function linkTestCaseToDevTicket(testCaseKey, devTicketKey) {
+    const jiraUrl = process.env.JIRA_BASE_URL;
+    const username = process.env.JIRA_USERNAME;
+    const apiToken = process.env.JIRA_API_TOKEN;
+
+    const auth = {
+        username: username,
+        password: apiToken
+    };
+
+    const issueLink = {
+        type: {
+            name: 'Relates'
+        },
+        inwardIssue: {
+            key: testCaseKey
+        },
+        outwardIssue: {
+            key: devTicketKey
+        }
+    };
+
+    try {
+        await axios.post(`${jiraUrl}/rest/api/3/issueLink`, issueLink, {
+            auth: auth,
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+        console.log(`Successfully linked ${testCaseKey} to ${devTicketKey}`);
+    } catch (error) {
+        console.error(`Error linking ${testCaseKey} to ${devTicketKey}:`, error);
+    }
+}
+
 // Main function to process QA tickets
-function processQaTickets(qaTickets) {
+async function processQaTickets(qaTickets) {
     let manualReviewList = [];
     let relationList = [];
 
-    qaTickets.forEach(qaTicket => {
+    for (const qaTicket of qaTickets) {
         const relatedDevTickets = getRelatedDevTicket(qaTicket);
         
         if (relatedDevTickets.length > 1) {
-            // Add the QA ticket to the manual review list
+            // Add QA ticket to manual review list
             manualReviewList.push({
                 qaTicketKey: qaTicket.key,
                 relatedDevTickets: relatedDevTickets.map(ticket => ticket.key)
@@ -43,28 +96,36 @@ function processQaTickets(qaTickets) {
             if (devTicket && devTicket.key) {
                 const testCases = getTestCases(qaTicket);
 
-                // Relate each test case to the development ticket
-                testCases.forEach(testCase => {
+                // Link each test case to the development ticket
+                for (const testCase of testCases) {
                     if (testCase && testCase.key) {
-                        // Add the relationship to the registry
-                        relationList.push({
-                            qaTicketKey: qaTicket.key,
-                            testCaseKey: testCase.key,
-                            devTicketKey: devTicket.key
-                        });
-                        console.log(`Relating test case ${testCase.key} to dev ticket ${devTicket.key}`);
-                    }
-                });
+                        // Check if the link already exists
+                        const alreadyExists = isLinkAlreadyExists(testCase.key, devTicket.key, jiraIssues);
+                        //console.log(`Test case ${testCase.key} already linked to dev ticket ${devTicket.key}: ${alreadyExists}`);
 
-                // Unlink the QA ticket from the development ticket
-                console.log(`Delinking QA ticket ${qaTicket.key} from dev ticket ${devTicket.key}`);
+                        if (!alreadyExists) {
+                            // Add relation to the record
+                            relationList.push({
+                                qaTicketKey: qaTicket.key,
+                                testCaseKey: testCase.key,
+                                devTicketKey: devTicket.key
+                            });
+                            console.log(`Relating test case ${testCase.key} to dev ticket ${devTicket.key}`);
+
+                            // Link the test case to the development ticket
+                            await linkTestCaseToDevTicket(testCase.key, devTicket.key);
+                        } else {
+                            //console.log(`Test case ${testCase.key} is already linked to dev ticket ${devTicket.key}`);
+                        }
+                    }
+                }
             } else {
                 console.log(`No valid development ticket found for QA ticket ${qaTicket.key}`);
             }
         } else {
             console.log(`No related development ticket found for QA ticket ${qaTicket.key}`);
         }
-    });
+    }
 
     return { manualReviewList, relationList };
 }
@@ -83,7 +144,7 @@ function saveManualReviewList(manualReviewList) {
     xlsx.writeFile(workbook, 'ManualReviewList.xlsx');
 }
 
-// Function to save the list of relationships to an Excel file
+// Function to save the relation list to an Excel file
 function saveRelationList(relationList) {
     const worksheetData = [['QA Ticket', 'Test Case', 'Development Ticket']];
     relationList.forEach(item => {
@@ -97,20 +158,34 @@ function saveRelationList(relationList) {
     xlsx.writeFile(workbook, 'RelationList.xlsx');
 }
 
-
-//const qaTickets = getQaTickets(jiraIssues);
-//const getQaTicket = qaTickets.filter(issue => issue.key === 'PAELS-11504');
-
-//getQaTicket.forEach(item => 
-    //console.log(`Lo consegui! ${item.key}`)
-//)
-
+// Function to execute another JavaScript file
+function executeScript(scriptPath) {
+    exec(`node ${scriptPath}`, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error executing script ${scriptPath}:`, error);
+            return;
+        }
+        if (stderr) {
+            console.error(`Standard error from script ${scriptPath}:`, stderr);
+            return;
+        }
+        console.log(`Standard output from script ${scriptPath}:`, stdout);
+    });
+}
 
 // Execute the process
+async function main() {
+    const MAX_PROCESS = 10; // Set the maximum number of QA tickets to process. If < 0 then will proccess everything in the system.
+    const qaTickets = getQaTickets(jiraIssues, MAX_PROCESS);
+    const { manualReviewList, relationList } = await processQaTickets(qaTickets);
+    saveManualReviewList(manualReviewList);
+    saveRelationList(relationList);
 
-const qaTickets = getQaTickets(jiraIssues);
-const { manualReviewList, relationList } = processQaTickets(qaTickets);
-saveManualReviewList(manualReviewList);
-saveRelationList(relationList);
-console.log('Process completed. Manual review list saved to ManualReviewList.xlsx.');
-console.log('Relation list saved to RelationList.xlsx.');
+    console.log('Process completed. Manual review list saved to ManualReviewList.xlsx.');
+    console.log('Relation list saved to RelationList.xlsx.');
+    console.log('******************************');
+    console.log('Now updating JiraIssues.json');
+    executeScript('jiraRequest.js');
+}
+
+main();
