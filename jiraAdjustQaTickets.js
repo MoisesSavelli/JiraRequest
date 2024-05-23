@@ -11,7 +11,7 @@ const jiraIssues = JSON.parse(rawData);
 // Function to get all QA tickets
 function getQaTickets(issues, maxProcess) {
     const qaTickets = issues.filter(issue => issue.fields.issuetype.name === 'QA Ticket' 
-    && issue.key === 'PAELS-8317' // Uncomment this line for testing purposes, and set here a QA Ticket.
+    //&& issue.key === 'PAELS-8317' // Uncomment this line for testing purposes, and set here a QA Ticket.
 
     );
     return maxProcess > 0 ? qaTickets.slice(0, maxProcess) : qaTickets;
