@@ -10,9 +10,13 @@ const jiraIssues = JSON.parse(rawData);
 
 // Function to get all QA tickets
 function getQaTickets(issues, maxProcess) {
-    const qaTickets = issues.filter(issue => issue.fields.issuetype.name === 'QA Ticket' 
-    //&& issue.key === 'PAELS-8317' // Uncomment this line for testing purposes, and set here a QA Ticket.
-
+    const qaTickets = issues.filter(issue => 
+        issue.fields.issuetype.name === 'QA Ticket' &&
+        //issue.fields.status?.name !== 'Test Case Creation' &&
+        issue.fields.issuelinks.some(link => link.type.name === 'Test' && link.inwardIssue) // Check if there is any Test Case linked
+        // Uncomment this line for testing purposes, and set here a QA Ticket.
+        // && issue.key === 'PAELS-11516' // QA Ticket without test cases
+        //&& issue.key === 'PAELS-8317' // QA Tickets with test cases
     );
     return maxProcess > 0 ? qaTickets.slice(0, maxProcess) : qaTickets;
 }
@@ -188,6 +192,7 @@ async function main() {
     console.log('Relation list saved to RelationList.xlsx.');
     console.log('******************************');
     console.log('Now updating JiraIssues.json');
+
     executeScript('jiraRequest.js');
 }
 
