@@ -10,7 +10,10 @@ const jiraIssues = JSON.parse(rawData);
 
 // Function to get all QA tickets
 function getQaTickets(issues, maxProcess) {
-    const qaTickets = issues.filter(issue => issue.fields.issuetype.name === 'QA Ticket' && issue.key === 'PAELS-8317');
+    const qaTickets = issues.filter(issue => issue.fields.issuetype.name === 'QA Ticket' 
+    && issue.key === 'PAELS-8317' // Uncomment this line for testing purposes, and set here a QA Ticket.
+
+    );
     return maxProcess > 0 ? qaTickets.slice(0, maxProcess) : qaTickets;
 }
 
@@ -31,7 +34,7 @@ function getTestCases(qaTicket) {
 function isLinkAlreadyExists(testCaseKey, devTicketKey, jiraIssues) {
     const testCase = jiraIssues.find(issue => issue.key === testCaseKey);
     if (!testCase || !testCase.fields || !testCase.fields.issuelinks) {
-        console.log(`Test case ${testCaseKey} does not have issue links or fields.`);
+        // console.log(`Test case ${testCaseKey} does not have issue links or fields.`);
         return false;
     }
     return testCase.fields.issuelinks.some(link => 
@@ -53,7 +56,7 @@ async function linkTestCaseToDevTicket(testCaseKey, devTicketKey) {
 
     const issueLink = {
         type: {
-            name: 'Relates'
+            name: 'Test'
         },
         inwardIssue: {
             key: testCaseKey
@@ -175,7 +178,7 @@ function executeScript(scriptPath) {
 
 // Execute the process
 async function main() {
-    const MAX_PROCESS = 10; // Set the maximum number of QA tickets to process. If < 0 then will proccess everything in the system.
+    const MAX_PROCESS = 10; // Set the maximum number of QA tickets to process. If =< 0 then will proccess everything in the system.
     const qaTickets = getQaTickets(jiraIssues, MAX_PROCESS);
     const { manualReviewList, relationList } = await processQaTickets(qaTickets);
     saveManualReviewList(manualReviewList);
