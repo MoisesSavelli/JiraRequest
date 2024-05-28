@@ -117,7 +117,8 @@ async function processQaTickets(qaTickets) {
                                 testCaseKey: testCase.key,
                                 devTicketKey: devTicket.key
                             });
-                            console.log(`Relating test case ${testCase.key} to dev ticket ${devTicket.key}`);
+                            // Uncomment for debugging
+                            //console.log(`Relating test case ${testCase.key} to dev ticket ${devTicket.key}`);
 
                             // Link the test case to the development ticket
                             await linkTestCaseToDevTicket(testCase.key, devTicket.key);
@@ -182,17 +183,15 @@ function executeScript(scriptPath) {
 
 // Execute the process
 async function main() {
-    const MAX_PROCESS = 10; // Set the maximum number of QA tickets to process. If =< 0 then will proccess everything in the system.
+    const MAX_PROCESS = 50; // Set the maximum number of QA tickets to process. If =< 0 then will proccess everything in the system.
     const qaTickets = getQaTickets(jiraIssues, MAX_PROCESS);
     const { manualReviewList, relationList } = await processQaTickets(qaTickets);
     saveManualReviewList(manualReviewList);
     saveRelationList(relationList);
-
     console.log('Process completed. Manual review list saved to ManualReviewList.xlsx.');
     console.log('Relation list saved to RelationList.xlsx.');
     console.log('******************************');
     console.log('Now updating JiraIssues.json');
-
     executeScript('jiraRequest.js');
 }
 
