@@ -183,7 +183,7 @@ function executeScript(scriptPath) {
 
 // Execute the process
 async function main() {
-    const MAX_PROCESS = 50; // Set the maximum number of QA tickets to process. If =< 0 then will proccess everything in the system.
+    const MAX_PROCESS = 0; // Set the maximum number of QA tickets to process. If =< 0 then will proccess everything in the system.
     const qaTickets = getQaTickets(jiraIssues, MAX_PROCESS);
     const { manualReviewList, relationList } = await processQaTickets(qaTickets);
     saveManualReviewList(manualReviewList);
