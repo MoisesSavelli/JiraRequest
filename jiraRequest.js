@@ -11,15 +11,18 @@ const apiToken = process.env.JIRA_API_TOKEN;
 
 const auth = Buffer.from(`${username}:${apiToken}`).toString('base64');
 
-// Dates for Jira Query
-//const startDate = '2024/01/01';
-//const endDate = format(new Date(), 'yyyy/MM/dd'); // Current Date
 
-// Bring all information - uncomment this and comment the next line to have all information
-const jql = `project=${projectKey}`; 
+// Bring all information - uncomment this and comment the next const jql to have all information
+//const jql = `project=${projectKey}`; 
+
+
+// Dates for Jira Query
+const startDate = '2024/03/01';
+const endDate = format(new Date(), 'yyyy/MM/dd'); // Current Date
+
 
 // Bring information by period
-//const jql = `project=${projectKey} AND created >= "${startDate}" AND created <= "${endDate}"`;
+const jql = `project=${projectKey} AND created >= "${startDate}" AND created <= "${endDate}"`;
 
 const fetchIssues = async (startAt = 0, allIssues = []) => {
   const config = {
@@ -32,7 +35,8 @@ const fetchIssues = async (startAt = 0, allIssues = []) => {
     params: {
       jql: jql,
       maxResults: 100,
-      startAt: startAt
+      startAt: startAt,
+      expand: 'changelog' // Adding changelog to the expand parameter
     }
   };
 
